@@ -28,6 +28,8 @@ var defaultCorsHeaders = {
   'access-control-max-age': 10 // Seconds.
 };
 
+var storage = []; // this is only a memory storage for posted data from the requeter
+
 var requestHandler = function(request, response) {
   // Request and Response come from node's http module.
   //
@@ -44,16 +46,45 @@ var requestHandler = function(request, response) {
   // debugging help, but you should always be careful about leaving stray
   // console.logs in your code.
   console.log('Serving request type ' + request.method + ' for url ' + request.url);
-
-  // The outgoing status.
   var statusCode = 200;
   var headers = defaultCorsHeaders;
+  var responseObject;
+  var buffer = '';
 
-  headers['Content-Type'] = 'application/json';
-  response.writeHead(statusCode, headers);
+  if (request.url === '/classes/messages') {
+    if (request.method === 'GET') {
+      // The outgoing status.
+      statusCode = 200;
+      var storedData;
+      responseObject = { results: [] };
+      if (storage.length > 0) {
+        storedData = storage[0];
+        responseObject.results.push(storedData);
+      }
 
-  var responseObject = { results: [] };
-  response.end(JSON.stringify(responseObject));
+    } else if (request.method === 'POST') {
+      statusCode = 201;
+      request.on('data', function(data) {
+        buffer += data;
+      });
+
+      request.on('end', function() {
+        responseObject = JSON.parse(buffer);
+        storage.push(responseObject);
+        response.writeHead(statusCode, headers);
+        response.end();
+      });
+      return;
+    }
+
+    headers['Content-Type'] = 'application/json';
+    response.writeHead(statusCode, headers);
+    response.end(JSON.stringify(responseObject));
+  } else {
+    statusCode = 404;
+    response.writeHead(statusCode, headers);
+    response.end();
+  }
 };
 
 
