@@ -89,7 +89,7 @@ var requestHandler = function(request, response) {
 
       request.on('end', function() {
         requestObject = JSON.parse(buffer);
-        storage.push(requestObject);
+        storage.unshift(requestObject);
         response.writeHead(statusCode, headers);
         response.end(JSON.stringify(requestObject));
       });
@@ -106,14 +106,15 @@ var requestHandler = function(request, response) {
       request.on('end', function() {
         requestObject = JSON.parse(buffer);
 
-        storage.findIndex(function(data) {
+        var index = storage.findIndex(function(data) {
           return (data.username === requestObject.username && 
                   data.message === requestObject.message && 
                   data.roomname === requestObject.roomname);
         });
 
+        storage.splice(index, 1);
         response.writeHead(statusCode, headers);
-        response.end(JSON.stringify(requestObject));
+        response.end();
       });
     }
   } else { // other routes will be invalid - return with status code 404

@@ -73,5 +73,19 @@ describe('server', function() {
     });
   });
 
+  it('should respond to DELETE requests for /classes/messages with a 204 status code', function(done) {
+    var requestParams = {method: 'DELETE',
+      uri: 'http://127.0.0.1:3000/classes/messages',
+      json: {
+        username: 'Jono',
+        message: 'Do my bidding!',
+        roomname: 'Lobby' }
+    };
+
+    request(requestParams, function(error, response, body) {
+      expect(response.statusCode).to.equal(204);
+      done();
+    });
+  });
 
 });

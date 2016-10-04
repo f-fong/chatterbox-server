@@ -116,4 +116,18 @@ describe('Node Server Request Listener Function', function() {
       });
   });
 
+  it('Should answer DELETE requests for /classes/messages with a 204 status code', function() {
+    var stubMsg = {
+      username: 'Jono',
+      message: 'Do my bidding!',
+      roomname: 'Lobby'
+    };
+    var req = new stubs.request('/classes/messages', 'DELETE', stubMsg);
+    var res = new stubs.response();
+
+    handler.requestHandler(req, res);
+    expect(res._responseCode).to.equal(204);
+    expect(res._ended).to.equal(true);
+  });
+
 });
