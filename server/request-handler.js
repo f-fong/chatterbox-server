@@ -28,7 +28,18 @@ var defaultCorsHeaders = {
   'access-control-max-age': 10 // Seconds.
 };
 
-var storage = []; // this is only a memory storage for posted data from the requeter
+var storage = [
+  {
+    username: 'Jono',
+    message: 'Do my bidding!',
+    roomname: 'Lobby'
+  },
+  {
+    username: 'Mel Brooks',
+    message: 'It\'s good to be the king',
+    roomname: 'Lobby'
+  }
+]; // this is only a memory storage for posted data from the requeter
 
 var requestHandler = function(request, response) {
   // Request and Response come from node's http module.
@@ -54,13 +65,13 @@ var requestHandler = function(request, response) {
 
   if (request.url === '/classes/messages') {
     if (request.method === 'GET') {
-      // The outgoing status.
       statusCode = 200;
       var storedData;
       responseObject = { results: [] };
       if (storage.length > 0) {
-        storedData = storage[0];
-        responseObject.results.push(storedData);
+        storage.forEach(function(data) {
+          responseObject.results.push(data);
+        });
       }
       response.writeHead(statusCode, headers);
       response.end(JSON.stringify(responseObject));
@@ -76,6 +87,10 @@ var requestHandler = function(request, response) {
         response.writeHead(statusCode, headers);
         response.end(JSON.stringify(responseObject));
       });
+    } else if (request.method === 'OPTIONS') {
+      statusCode = 200;
+      response.writeHead(statusCode, headers);
+      response.end();
     }
   } else {
     statusCode = 404;

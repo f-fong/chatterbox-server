@@ -1,0 +1,106 @@
+body {
+    background: #eee;
+    text-align: center;
+    padding: 0 25px;
+    font-family: arial, sans-serif;
+}
+
+#main, #chats {
+    width: auto;
+    margin: auto;
+    text-align: left;
+    background: white;
+    padding: 30px 60px;
+    border: solid #ddd;
+    border-width: 1px 0 0 0;
+}
+
+#main h1 {
+    margin-top: 0;
+    font-size: 35px;
+    margin-bottom: 5px;
+    padding: 5px;
+}
+
+#main h1 span {
+    font-style:italic;
+}
+
+#main ul {
+    padding-left: 20px;
+}
+
+#main .error {
+    border: 1px solid red;
+    background: #FDEFF0;
+    padding: 20px;
+}
+
+#main .success {
+    margin-top: 25px;
+}
+
+#main .success code {
+    font-size: 12px;
+    color: green;
+    line-height: 13px;
+}
+
+form {
+    padding: 20px;
+    padding-left: 0;
+    margin-bottom: 20px;
+}
+
+form input[type=text] {
+    margin-right: 10px;
+    width: 70%;
+    font-size: 12px;
+    padding: 5px;
+}
+
+#refresh {
+    width: auto;
+    float: right;
+}
+
+.chat {
+    padding: 8px;
+    margin-bottom: 12px;
+    background-color: white;
+    border-radius: 5px;
+    border: solid 1px grey;
+    padding-left: 12px;
+}
+
+.chat .username {
+    font-weight: 800;
+}
+
+.chat .text {
+    padding-top: 10px;
+    padding-bottom: 10px
+    font-style: sans-serif;
+    font-color: grey;
+}
+
+.chat:hover {
+    background-color: #ddd;
+}
+
+.spinner {
+    float: right;
+    height: 46px;
+    margin-bottom: 5px;
+    display: none;
+}
+
+.spinner img {
+    padding: 10px;
+}
+
+.friend {
+    color: #fff;
+    background-color: #0090da;
+}
+
