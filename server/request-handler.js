@@ -1,3 +1,4 @@
+var _ = require('underscore');
 /*************************************************************
 
 You should implement your request handler function in this file.
@@ -28,6 +29,7 @@ var defaultCorsHeaders = {
   'access-control-max-age': 10 // Seconds.
 };
 
+// this is only a memory storage for posted data from the requester
 var storage = [
   {
     username: 'Jono',
@@ -39,7 +41,7 @@ var storage = [
     message: 'It\'s good to be the king',
     roomname: 'Lobby'
   }
-]; // this is only a memory storage for posted data from the requeter
+];
 
 var requestHandler = function(request, response) {
   // Request and Response come from node's http module.
@@ -60,14 +62,17 @@ var requestHandler = function(request, response) {
   var statusCode = 200;
   var headers = defaultCorsHeaders;
   var responseObject;
+  var requestObject;
   var buffer = '';
   headers['Content-Type'] = 'application/json';
 
+  // Only valid for route '/classes/messages'
   if (request.url === '/classes/messages') {
     if (request.method === 'GET') {
+      // Response status code for GET is 200
       statusCode = 200;
-      var storedData;
       responseObject = { results: [] };
+      // Pull storage data and send them to the requester
       if (storage.length > 0) {
         storage.forEach(function(data) {
           responseObject.results.push(data);
@@ -76,23 +81,42 @@ var requestHandler = function(request, response) {
       response.writeHead(statusCode, headers);
       response.end(JSON.stringify(responseObject));
     } else if (request.method === 'POST') {
+      // Response status code for POST is 201
       statusCode = 201;
       request.on('data', function(data) {
         buffer += data;
       });
 
       request.on('end', function() {
-        responseObject = JSON.parse(buffer);
-        storage.push(responseObject);
+        requestObject = JSON.parse(buffer);
+        storage.push(requestObject);
         response.writeHead(statusCode, headers);
-        response.end(JSON.stringify(responseObject));
+        response.end(JSON.stringify(requestObject));
       });
     } else if (request.method === 'OPTIONS') {
+      // Response status code for OPTIONS is 200
       statusCode = 200;
       response.writeHead(statusCode, headers);
       response.end();
+    } else if (request.method === 'DELETE') {
+      statusCode = 204;
+      request.on('data', function(data) {
+        buffer += data;
+      });
+      request.on('end', function() {
+        requestObject = JSON.parse(buffer);
+
+        storage.findIndex(function(data) {
+          return (data.username === requestObject.username && 
+                  data.message === requestObject.message && 
+                  data.roomname === requestObject.roomname);
+        });
+
+        response.writeHead(statusCode, headers);
+        response.end(JSON.stringify(requestObject));
+      });
     }
-  } else {
+  } else { // other routes will be invalid - return with status code 404
     statusCode = 404;
     response.writeHead(statusCode, headers);
     response.end();
