@@ -1,4 +1,5 @@
-var _ = require('underscore');
+var fs = require('fs');
+var path = require('path');
 /*************************************************************
 
 You should implement your request handler function in this file.
@@ -29,7 +30,7 @@ var defaultCorsHeaders = {
   'access-control-max-age': 10 // Seconds.
 };
 
-// this is only a memory storage for posted data from the requester
+// this is only a message data storage
 var storage = [
   {
     username: 'Jono',
@@ -42,6 +43,105 @@ var storage = [
     roomname: 'Lobby'
   }
 ];
+
+var apiHandler = function(request, response, headers) {
+  var statusCode = 200; // default status code
+
+  var requestObject;
+  var responseObject;
+  var buffer = '';
+
+  headers['Content-Type'] = 'application/json';
+  if (request.method === 'GET') {
+    // Response status code for GET is 200
+    statusCode = 200;
+    responseObject = { results: [] };
+    // Pull storage data and send them to the requester
+    if (storage.length > 0) {
+      storage.forEach(function(data) {
+        responseObject.results.push(data);
+      });
+    }
+    response.writeHead(statusCode, headers);
+    response.end(JSON.stringify(responseObject));
+  } else if (request.method === 'POST') {
+    // Response status code for POST is 201
+    statusCode = 201;
+    request.on('data', function(data) {
+      buffer += data;
+    });
+
+    request.on('end', function() {
+      requestObject = JSON.parse(buffer);
+      storage.unshift(requestObject);
+      response.writeHead(statusCode, headers);
+      response.end(JSON.stringify(requestObject));
+    });
+  } else if (request.method === 'OPTIONS') {
+    // Response status code for OPTIONS is 200
+    statusCode = 200;
+    response.writeHead(statusCode, headers);
+    response.end();
+  } else if (request.method === 'DELETE') {
+    statusCode = 204;
+    request.on('data', function(data) {
+      buffer += data;
+    });
+    request.on('end', function() {
+      requestObject = JSON.parse(buffer);
+
+      var index = storage.findIndex(function(data) {
+        return (data.username === requestObject.username && 
+                data.message === requestObject.message && 
+                data.roomname === requestObject.roomname);
+      });
+
+      // Remove the message 
+      storage.splice(index, 1);
+      response.writeHead(statusCode, headers);
+      response.end();
+    });
+  }  
+};
+
+var fileRequestHandler = function(request, response) {
+  if (request.method === 'GET') {
+    var filePath = request.url;
+    if (filePath === '/' || filePath.includes('/?username=')) {
+      filePath = '/index.html';
+    }
+
+    var extname = path.extname(filePath);
+    var contentType = 'text/html';
+    switch (extname) {
+    case '.js':
+      contentType = 'text/javascript';
+      break;
+    case '.css':
+      contentType = 'text/css';
+      break;
+    case '.json':
+      contentType = 'application/json';
+      break;
+    case '.png':
+      contentType = 'image/png';
+      break;      
+    case '.jpg':
+      contentType = 'image/jpg';
+      break;
+    case '.gif':
+      contentType = 'image/gif';
+      break;
+    }
+
+    var clientPath = path.join(__dirname, '../client');
+    var fileLocation = clientPath + filePath;   
+    fs.readFile(fileLocation, function(error, content) {
+      response.writeHead(200, { 'Content-Type': contentType });
+      response.end(content, 'utf-8');
+    });
+  }
+};
 
 var requestHandler = function(request, response) {
   // Request and Response come from node's http module.
@@ -58,71 +158,34 @@ var requestHandler = function(request, response) {
   // Adding more logging to your server can be an easy way to get passive
   // debugging help, but you should always be careful about leaving stray
   // console.logs in your code.
-  console.log('Serving request type ' + request.method + ' for url ' + request.url);
-  var statusCode = 200;
+  var log = 'Serving request type ' + request.method + ' for url ' + request.url;
+  
   var headers = defaultCorsHeaders;
   var responseObject;
   var requestObject;
-  var buffer = '';
-  headers['Content-Type'] = 'application/json';
 
-  // Only valid for route '/classes/messages'
+  var clientResourceRoutes = [
+    '/',
+    '/styles/styles.css',
+    '/bower_components/jquery/dist/jquery.js',
+    '/bower_components/underscore/underscore.js',
+    '/scripts/app.js',
+    '/client/images/spiffygif_46x46.gif'
+  ];
+  
+  // '/classes/messages' route goes to the apiHandler 
   if (request.url === '/classes/messages') {
-    if (request.method === 'GET') {
-      // Response status code for GET is 200
-      statusCode = 200;
-      responseObject = { results: [] };
-      // Pull storage data and send them to the requester
-      if (storage.length > 0) {
-        storage.forEach(function(data) {
-          responseObject.results.push(data);
-        });
-      }
-      response.writeHead(statusCode, headers);
-      response.end(JSON.stringify(responseObject));
-    } else if (request.method === 'POST') {
-      // Response status code for POST is 201
-      statusCode = 201;
-      request.on('data', function(data) {
-        buffer += data;
-      });
-
-      request.on('end', function() {
-        requestObject = JSON.parse(buffer);
-        storage.unshift(requestObject);
-        response.writeHead(statusCode, headers);
-        response.end(JSON.stringify(requestObject));
-      });
-    } else if (request.method === 'OPTIONS') {
-      // Response status code for OPTIONS is 200
-      statusCode = 200;
-      response.writeHead(statusCode, headers);
-      response.end();
-    } else if (request.method === 'DELETE') {
-      statusCode = 204;
-      request.on('data', function(data) {
-        buffer += data;
-      });
-      request.on('end', function() {
-        requestObject = JSON.parse(buffer);
-
-        var index = storage.findIndex(function(data) {
-          return (data.username === requestObject.username && 
-                  data.message === requestObject.message && 
-                  data.roomname === requestObject.roomname);
-        });
-
-        storage.splice(index, 1);
-        response.writeHead(statusCode, headers);
-        response.end();
-      });
-    }
-  } else { // other routes will be invalid - return with status code 404
-    statusCode = 404;
-    response.writeHead(statusCode, headers);
+    apiHandler(request, response, headers);
+  } else if (clientResourceRoutes.indexOf(request.url) >= 0) { // handles the client side resources
+    fileRequestHandler(request, response);
+  } else if (request.url.includes('/?username=')) {
+    fileRequestHandler(request, response);
+  } else { // no matche routes will be invalid - return with status code 404
+    response.writeHead(404, headers);
     response.end();
   }
 };
+
 
 
 exports.requestHandler = requestHandler;
