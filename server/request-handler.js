@@ -50,6 +50,7 @@ var requestHandler = function(request, response) {
   var headers = defaultCorsHeaders;
   var responseObject;
   var buffer = '';
+  headers['Content-Type'] = 'application/json';
 
   if (request.url === '/classes/messages') {
     if (request.method === 'GET') {
@@ -61,7 +62,8 @@ var requestHandler = function(request, response) {
         storedData = storage[0];
         responseObject.results.push(storedData);
       }
-
+      response.writeHead(statusCode, headers);
+      response.end(JSON.stringify(responseObject));
     } else if (request.method === 'POST') {
       statusCode = 201;
       request.on('data', function(data) {
@@ -72,14 +74,9 @@ var requestHandler = function(request, response) {
         responseObject = JSON.parse(buffer);
         storage.push(responseObject);
         response.writeHead(statusCode, headers);
-        response.end();
+        response.end(JSON.stringify(responseObject));
       });
-      return;
     }
-
-    headers['Content-Type'] = 'application/json';
-    response.writeHead(statusCode, headers);
-    response.end(JSON.stringify(responseObject));
   } else {
     statusCode = 404;
     response.writeHead(statusCode, headers);
@@ -88,4 +85,4 @@ var requestHandler = function(request, response) {
 };
 
 
-module.exports = requestHandler;
+exports.requestHandler = requestHandler;
